@@ -16,50 +16,57 @@ import java.rmi.RemoteException;
 import java.util.Collection;
 import java.util.HashSet;
 
-import javax.xml.rpc.ServiceException;
-
+import org.apache.axis2.AxisFault;
+import org.apache.axis2.client.Options;
+import org.apache.axis2.client.ServiceClient;
+import org.apache.axis2.transport.http.HTTPConstants;
+import org.apache.axis2.transport.http.HttpTransportProperties;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.debug.core.ILaunchConfiguration;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.PlatformUI;
+
 import org.hpccsystems.eclide.Activator;
 import org.hpccsystems.eclide.builder.ECLCompiler;
 import org.hpccsystems.internal.ConfigurationPreferenceStore;
-import org.hpccsystems.ws.filespray.DFUWorkunit;
-import org.hpccsystems.ws.filespray.FileSprayLocator;
-import org.hpccsystems.ws.filespray.FileSprayServiceSoap;
-import org.hpccsystems.ws.filespray.GetDFUWorkunits;
-import org.hpccsystems.ws.filespray.GetDFUWorkunitsResponse;
-import org.hpccsystems.ws.wsdfu.DFULogicalFile;
-import org.hpccsystems.ws.wsdfu.DFUQueryRequest;
-import org.hpccsystems.ws.wsdfu.DFUQueryResponse;
-import org.hpccsystems.ws.wsdfu.WsDfuLocator;
-import org.hpccsystems.ws.wsdfu.WsDfuServiceSoap;
-import org.hpccsystems.ws.wstopology.TpDropZone;
-import org.hpccsystems.ws.wstopology.TpLogicalCluster;
-import org.hpccsystems.ws.wstopology.TpLogicalClusterQueryRequest;
-import org.hpccsystems.ws.wstopology.TpLogicalClusterQueryResponse;
-import org.hpccsystems.ws.wstopology.TpServiceQueryRequest;
-import org.hpccsystems.ws.wstopology.TpServiceQueryResponse;
-import org.hpccsystems.ws.wstopology.TpServices;
-import org.hpccsystems.ws.wstopology.TpTargetCluster;
-import org.hpccsystems.ws.wstopology.WsTopologyLocator;
-import org.hpccsystems.ws.wstopology.WsTopologyServiceSoap;
-import org.hpccsystems.ws.wsworkunits.ApplicationValue;
-import org.hpccsystems.ws.wsworkunits.ArrayOfEspException;
-import org.hpccsystems.ws.wsworkunits.ECLSourceFile;
-import org.hpccsystems.ws.wsworkunits.ECLWorkunit;
-import org.hpccsystems.ws.wsworkunits.QuerySet;
-import org.hpccsystems.ws.wsworkunits.WUCreateAndUpdate;
-import org.hpccsystems.ws.wsworkunits.WUQuery;
-import org.hpccsystems.ws.wsworkunits.WUQueryResponse;
-import org.hpccsystems.ws.wsworkunits.WUQuerysets;
-import org.hpccsystems.ws.wsworkunits.WUQuerysetsResponse;
-import org.hpccsystems.ws.wsworkunits.WUSubmit;
-import org.hpccsystems.ws.wsworkunits.WUUpdateResponse;
-import org.hpccsystems.ws.wsworkunits.WsWorkunitsLocator;
-import org.hpccsystems.ws.wsworkunits.WsWorkunitsServiceSoap;
+import org.hpccsystems.ws.wstopology.WsTopologyStub;
+import org.hpccsystems.ws.wstopology.WsTopologyStub.ArrayOfTpDropZone;
+import org.hpccsystems.ws.wstopology.WsTopologyStub.ArrayOfTpLogicalCluster;
+import org.hpccsystems.ws.wstopology.WsTopologyStub.TpDropZone;
+import org.hpccsystems.ws.wstopology.WsTopologyStub.TpLogicalCluster;
+import org.hpccsystems.ws.wstopology.WsTopologyStub.TpLogicalClusterQueryRequest;
+import org.hpccsystems.ws.wstopology.WsTopologyStub.TpLogicalClusterQueryResponse;
+import org.hpccsystems.ws.wstopology.WsTopologyStub.TpServiceQueryRequest;
+import org.hpccsystems.ws.wstopology.WsTopologyStub.TpServiceQueryResponse;
+import org.hpccsystems.ws.wstopology.WsTopologyStub.TpServices;
+import org.hpccsystems.ws.wstopology.WsTopologyStub.TpTargetCluster;
+import org.hpccsystems.ws.filespray.FileSprayStub;
+import org.hpccsystems.ws.filespray.FileSprayStub.ArrayOfDFUWorkunit;
+import org.hpccsystems.ws.filespray.FileSprayStub.DFUWorkunit;
+import org.hpccsystems.ws.filespray.FileSprayStub.GetDFUWorkunits;
+import org.hpccsystems.ws.filespray.FileSprayStub.GetDFUWorkunitsResponse;
+import org.hpccsystems.ws.wsdfu.WsDfuStub;
+import org.hpccsystems.ws.wsdfu.WsDfuStub.ArrayOfDFULogicalFile;
+import org.hpccsystems.ws.wsdfu.WsDfuStub.DFULogicalFile;
+import org.hpccsystems.ws.wsdfu.WsDfuStub.DFUQueryRequest;
+import org.hpccsystems.ws.wsdfu.WsDfuStub.DFUQueryResponse;
+import org.hpccsystems.ws.wsworkunits.EspSoapFault;
+import org.hpccsystems.ws.wsworkunits.WsWorkunitsStub;
+import org.hpccsystems.ws.wsworkunits.WsWorkunitsStub.ApplicationValue;
+import org.hpccsystems.ws.wsworkunits.WsWorkunitsStub.ArrayOfApplicationValue;
+import org.hpccsystems.ws.wsworkunits.WsWorkunitsStub.ArrayOfECLWorkunit;
+import org.hpccsystems.ws.wsworkunits.WsWorkunitsStub.ArrayOfQuerySet;
+import org.hpccsystems.ws.wsworkunits.WsWorkunitsStub.ECLSourceFile;
+import org.hpccsystems.ws.wsworkunits.WsWorkunitsStub.ECLWorkunit;
+import org.hpccsystems.ws.wsworkunits.WsWorkunitsStub.QuerySet;
+import org.hpccsystems.ws.wsworkunits.WsWorkunitsStub.WUCreateAndUpdate;
+import org.hpccsystems.ws.wsworkunits.WsWorkunitsStub.WUQuery;
+import org.hpccsystems.ws.wsworkunits.WsWorkunitsStub.WUQueryResponse;
+import org.hpccsystems.ws.wsworkunits.WsWorkunitsStub.WUQuerysets;
+import org.hpccsystems.ws.wsworkunits.WsWorkunitsStub.WUQuerysetsResponse;
+import org.hpccsystems.ws.wsworkunits.WsWorkunitsStub.WUSubmit;
+import org.hpccsystems.ws.wsworkunits.WsWorkunitsStub.WUUpdateResponse;
 
 public class Platform extends DataSingleton {
 	public static DataSingletonCollection All = new DataSingletonCollection();	
@@ -173,6 +180,31 @@ public class Platform extends DataSingleton {
     WUActionSize = 8
 };
 	 */	
+	Collection<Workunit> getWorkunits(String cluster, String startDate, String endDate) {
+		if (isEnabled()) {
+			Workunit.All.pushTransaction("platform.getWorkunits");
+			
+			WsWorkunitsStub stub = getWsWorkunitsService();
+			WUQuery request = new WUQuery();
+			request.setCluster(cluster);
+			request.setStartDate(startDate);
+			request.setEndDate(startDate);
+			request.setCount(100);
+			try {
+				WUQueryResponse response = stub.wUQuery(request);
+				updateWorkunits(response.getWorkunits());
+			} catch (EspSoapFault e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (RemoteException e) {
+				confirmDisable();
+				e.printStackTrace();
+			}
+			Workunit.All.popTransaction();
+		}
+		return new HashSet<Workunit>(workunits);
+	}
+
 	public Workunit submit(ILaunchConfiguration configuration, IFile file, String cluster) {
 		if (isEnabled()) {
 			ECLCompiler compiler = new ECLCompiler(new ConfigurationPreferenceStore(configuration), file.getProject());
@@ -181,15 +213,16 @@ public class Platform extends DataSingleton {
 			{
 				try {
 					Workunit.All.pushTransaction("Platform.submit");
-					WsWorkunitsServiceSoap service = getWsWorkunitsService();
+					WsWorkunitsStub stub = getWsWorkunitsService();;
 					WUCreateAndUpdate request = new WUCreateAndUpdate();
 					request.setQueryText(archive);
 					request.setJobname(file.getFullPath().removeFileExtension().lastSegment());
-					ApplicationValue[] appVals = new ApplicationValue[1];
-					appVals[0] = new ApplicationValue();
-					appVals[0].setApplication(Activator.PLUGIN_ID);
-					appVals[0].setName("path");
-					appVals[0].setValue(file.getFullPath().toPortableString());
+					ArrayOfApplicationValue appVals = new ArrayOfApplicationValue();
+					ApplicationValue appVal = new ApplicationValue();
+					appVal.setApplication(Activator.PLUGIN_ID);
+					appVal.setName("path");
+					appVal.setValue(file.getFullPath().toPortableString());
+					appVals.addApplicationValue(appVal);
 					request.setApplicationValues(appVals);
 
 					int inlineResultLimit = launchConfiguration.getInt(ClientTools.P_INLINERESULTLIMIT);
@@ -198,7 +231,7 @@ public class Platform extends DataSingleton {
 					}
 
 					try {
-						WUUpdateResponse response = service.WUCreateAndUpdate(request);
+						WUUpdateResponse response = stub.wUCreateAndUpdate(request);
 						response.getWorkunit().setCluster(cluster);	//  WUSubmit does not return an updated ECLWorkunit, so set cluster here...  
 						Workunit wu = getWorkunit(response.getWorkunit());
 						if (wu != null) {
@@ -207,10 +240,10 @@ public class Platform extends DataSingleton {
 							WUSubmit submitRequest = new WUSubmit();
 							submitRequest.setWuid(response.getWorkunit().getWuid());
 							submitRequest.setCluster(cluster);
-							service.WUSubmit(submitRequest);
+							stub.wUSubmit(submitRequest);
 						}
 						return wu;
-					} catch (ArrayOfEspException e) {
+					} catch (EspSoapFault e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					} catch (RemoteException e) {
@@ -249,30 +282,6 @@ public class Platform extends DataSingleton {
 		return workunit;
 	}
 
-	Collection<Workunit> getWorkunits(String cluster, String startDate, String endDate) {
-		if (isEnabled()) {
-			Workunit.All.pushTransaction("platform.getWorkunits");
-			WsWorkunitsServiceSoap service = getWsWorkunitsService();
-			WUQuery request = new WUQuery();
-			request.setCluster(cluster);
-			request.setStartDate(startDate);
-			request.setEndDate(startDate);
-			request.setCount(100);
-			try {
-				WUQueryResponse response = service.WUQuery(request);
-				updateWorkunits(response.getWorkunits());
-			} catch (ArrayOfEspException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (RemoteException e) {
-				confirmDisable();
-				e.printStackTrace();
-			}
-			Workunit.All.popTransaction();
-		}
-		return new HashSet<Workunit>(workunits);
-	}
-
 	public Collection<Workunit> getWorkunits(String cluster) {
 		return getWorkunits(cluster, "", "");
 	}
@@ -296,10 +305,10 @@ public class Platform extends DataSingleton {
 		return false;
 	}
 
-	synchronized void updateWorkunits(ECLWorkunit[] rawWorkunits) {
+	synchronized void updateWorkunits(ArrayOfECLWorkunit rawWorkunits) {
 		workunits.clear();
 		if (rawWorkunits != null) {
-			for(ECLWorkunit wu : rawWorkunits) {
+			for(ECLWorkunit wu : rawWorkunits.getECLWorkunit()) {
 				if (isValid(wu.getWuid())) {
 					workunits.add(getWorkunit(wu)); 	//  Will mark changed if needed  ---
 				}
@@ -318,25 +327,25 @@ public class Platform extends DataSingleton {
 		return workunit;
 	}
 
-	public FileSprayWorkunit[] getFileSprayWorkunits(String cluster) {
+	public FileSprayWorkunit[] getFileSprayWorkunits(String cluster){
 		if (isEnabled()) {
 			//TODO CollectionDelta monitor = new CollectionDelta("getFileSprayWorkunits", fileSprayWorkunits);
-			FileSprayServiceSoap service = getFileSprayService();
+			FileSprayStub stub = getFileSprayService();
 			GetDFUWorkunits request = new GetDFUWorkunits();
 			request.setPageSize(new Long(100));
 			request.setCluster(cluster);
 			try {
-				GetDFUWorkunitsResponse response = service.getDFUWorkunits(request);
+				GetDFUWorkunitsResponse response = stub.getDFUWorkunits(request);
 				updateFileSprayWorkunits(response.getResults());
-			} catch (ArrayOfEspException e) {
+			} catch (RemoteException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
-			} catch (RemoteException e) {
+			} catch (org.hpccsystems.ws.filespray.EspSoapFault e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 			//TODO notifyObservers(monitor.calcChanges(fileSprayWorkunits));
-		}
+ 		}
 		return fileSprayWorkunits.toArray(new FileSprayWorkunit[0]);
 	}
 
@@ -344,10 +353,10 @@ public class Platform extends DataSingleton {
 		return getFileSprayWorkunits("");
 	}
 
-	synchronized void updateFileSprayWorkunits(DFUWorkunit[] rawWorkunits) {
+	synchronized void updateFileSprayWorkunits(ArrayOfDFUWorkunit rawWorkunits) {
 		fileSprayWorkunits.clear();
 		if (rawWorkunits != null) {
-			for(DFUWorkunit wu : rawWorkunits) {
+			for(DFUWorkunit wu : rawWorkunits.getDFUWorkunit()) {
 				fileSprayWorkunits.add(getFileSprayWorkunit(wu)); 	//  Will mark changed if needed  ---
 			}
 		}
@@ -367,27 +376,27 @@ public class Platform extends DataSingleton {
 	public DataQuerySet[] getDataQuerySets() {
 		if (isEnabled()) {
 			//TODO CollectionDelta monitor = new CollectionDelta("getDataQuerySets", dataQuerySets);
-			WsWorkunitsServiceSoap service = getWsWorkunitsService();
+			WsWorkunitsStub stub = getWsWorkunitsService();;
 			WUQuerysets request = new WUQuerysets();
 			try {
-				WUQuerysetsResponse response = service.WUQuerysets(request);
+				WUQuerysetsResponse response = stub.wUQuerysets(request);
 				updateDataQuerySets(response.getQuerysets());
-			} catch (ArrayOfEspException e) {
+			} catch (RemoteException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
-			} catch (RemoteException e) {
+			} catch (EspSoapFault e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 			//TODO notifyObservers(monitor.calcChanges(dataQuerySets));
-		}
+ 		}
 		return dataQuerySets.toArray(new DataQuerySet[0]);
 	}
 
-	synchronized void updateDataQuerySets(QuerySet[] rawQuerySets) {
+	synchronized void updateDataQuerySets(ArrayOfQuerySet rawQuerySets) {
 		dataQuerySets.clear();
 		if (rawQuerySets != null) {
-			for(QuerySet qs : rawQuerySets) {
+			for(QuerySet qs : rawQuerySets.getQuerySet()) {
 				dataQuerySets.add(getDataQuerySet(qs)); 	//  Will mark changed if needed  ---
 			}
 		}
@@ -413,16 +422,16 @@ public class Platform extends DataSingleton {
 	public LogicalFile[] getLogicalFiles(String cluster) {
 		if (isEnabled()) {
 			//TODO CollectionDelta monitor = new CollectionDelta("getLogicalFiles", logicalFiles);
-			WsDfuServiceSoap service = getWsDfuService();
+			WsDfuStub stub = getWsDfuService();
 			DFUQueryRequest request = new DFUQueryRequest();
 			request.setClusterName(cluster);
 			try {
-				DFUQueryResponse response = service.DFUQuery(request);
+				DFUQueryResponse response = stub.dFUQuery(request);
 				updateLogicalFiles(response.getDFULogicalFiles());
-			} catch (ArrayOfEspException e) {
+			} catch (RemoteException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
-			} catch (RemoteException e) {
+			} catch (org.hpccsystems.ws.wsdfu.EspSoapFault e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
@@ -435,10 +444,10 @@ public class Platform extends DataSingleton {
 		return getLogicalFiles("");
 	}
 
-	synchronized void updateLogicalFiles(DFULogicalFile[] rawLogicalFiles) {
+	synchronized void updateLogicalFiles(ArrayOfDFULogicalFile rawLogicalFiles) {
 		logicalFiles.clear();
 		if (rawLogicalFiles != null) {
-			for(DFULogicalFile lf : rawLogicalFiles) {
+			for(DFULogicalFile lf : rawLogicalFiles.getDFULogicalFile()) {
 				logicalFiles.add(getLogicalFile(lf)); 	//  Will mark changed if needed  ---
 			}
 		}
@@ -458,15 +467,15 @@ public class Platform extends DataSingleton {
 	public Cluster[] getClusters() {
 		if (isEnabled()) {
 			//TODO CollectionDelta monitor = new CollectionDelta("getClusters", clusters);
-			WsTopologyServiceSoap service = getWsTopologyService();
+			WsTopologyStub stub = getWsTopologyService();
 			TpLogicalClusterQueryRequest request = new TpLogicalClusterQueryRequest();
 			try {
-				TpLogicalClusterQueryResponse response = service.tpLogicalClusterQuery(request);
+				TpLogicalClusterQueryResponse response = stub.tpLogicalClusterQuery(request);
 				updateClusters(response.getTpLogicalClusters());
-			} catch (ArrayOfEspException e) {
+			} catch (RemoteException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
-			} catch (RemoteException e) {
+			} catch (org.hpccsystems.ws.wstopology.EspSoapFault e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
@@ -475,9 +484,9 @@ public class Platform extends DataSingleton {
 		return clusters.toArray(new Cluster[0]);
 	}
 
-	synchronized void updateClusters(TpLogicalCluster[] tpLogicalClusters) {
+	synchronized void updateClusters(ArrayOfTpLogicalCluster tpLogicalClusters) {
 		if (tpLogicalClusters != null) {
-			for(TpLogicalCluster c : tpLogicalClusters) {
+			for(TpLogicalCluster c : tpLogicalClusters.getTpLogicalCluster()) {
 				clusters.add(getCluster(c.getName())); 	//  Will mark changed if needed  ---
 			}
 		}
@@ -497,20 +506,20 @@ public class Platform extends DataSingleton {
 	public DropZone[] getDropZones() {
 		if (isEnabled()) {
 			//TODO CollectionDelta monitor = new CollectionDelta("getClusters", clusters);
-			WsTopologyServiceSoap service = getWsTopologyService();
+			WsTopologyStub stub = getWsTopologyService();
 			TpServiceQueryRequest request = new TpServiceQueryRequest();
 			request.setType("ALLSERVICES");
 			try {
-				TpServiceQueryResponse response = service.tpServiceQuery(request);
+				TpServiceQueryResponse response = stub.tpServiceQuery(request);
 				updateServices(response.getServiceList());
-			} catch (ArrayOfEspException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
 			} catch (RemoteException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
+			} catch (org.hpccsystems.ws.wstopology.EspSoapFault e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
-			//TODO notifyObservers(monitor.calcChanges(clusters));
+			//TODO notifyObservers(monitor.calcChanges(clusters));			
 		}
 		return dropZones.toArray(new DropZone[0]);
 	}
@@ -521,9 +530,9 @@ public class Platform extends DataSingleton {
 		}
 
 	}
-	private void updateDropZones(TpDropZone[] rawDropZones) {
+	private void updateDropZones(ArrayOfTpDropZone rawDropZones) {
 		if (rawDropZones != null) {
-			for(TpDropZone dz : rawDropZones) {
+			for(TpDropZone dz : rawDropZones.getTpDropZone()) {
 				dropZones.add(getDropZone(dz));
 			}
 		}
@@ -538,6 +547,10 @@ public class Platform extends DataSingleton {
 		return new URL("http", getIP(), getPort(), "/" + service);
 	}
 
+	public URL getURL(String service, int port) throws MalformedURLException {
+		return new URL("http", getIP(), port, "/" + service);
+	}
+
 	public URL getURL(String service, String method) throws MalformedURLException {
 		return getURL(service + "/" + method);
 	}
@@ -546,11 +559,34 @@ public class Platform extends DataSingleton {
 		return getURL(service + "/" + method + "?" + params);
 	}
 
-	void initStub(org.apache.axis.client.Stub stub) {
-		stub.setUsername(getUser());
-		stub.setPassword(getPassword());
-		stub.setTimeout(180 * 1000);
-		stub.setMaintainSession(true);
+	void initStub(org.apache.axis2.client.Stub stub) {
+		final ServiceClient serviceClient = stub._getServiceClient();
+		final Options options = serviceClient.getOptions();
+		HttpTransportProperties.Authenticator basicAuth = new HttpTransportProperties.Authenticator();
+	    basicAuth.setUsername(getUser());
+	    basicAuth.setPassword(getPassword());
+	    basicAuth.setPreemptiveAuthentication(true);	    
+	    options.setProperty(HTTPConstants.AUTHENTICATE, basicAuth);		
+	    options.setProperty(HTTPConstants.CHUNKED, false);
+		options.setTimeOutInMilliSeconds(180 * 1000);
+//		stub.setMaintainSession(true);
+		serviceClient.setOptions(options);		
+
+		//  Test
+		/*
+		MultiThreadedHttpConnectionManager multiThreadedHttpConnectionManager = new MultiThreadedHttpConnectionManager();
+
+	    HttpConnectionManagerParams params = new HttpConnectionManagerParams();
+	    params.setDefaultMaxConnectionsPerHost(20);
+	    params.setMaxTotalConnections(20);
+	    params.setSoTimeout(20000);
+	    params.setConnectionTimeout(20000);
+	    multiThreadedHttpConnectionManager.setParams(params);
+
+	    HttpClient httpClient = new HttpClient(multiThreadedHttpConnectionManager);
+
+	    serviceClient.getServiceContext().getConfigurationContext().setProperty(HTTPConstants.CACHED_HTTP_CLIENT, httpClient);
+	    */		
 	}
 
 	void latencyTest() {
@@ -566,68 +602,65 @@ public class Platform extends DataSingleton {
 		}
 	}
 
-	public WsWorkunitsServiceSoap getWsWorkunitsService() {
+	public WsWorkunitsStub getWsWorkunitsService() {
 		latencyTest();
-		WsWorkunitsLocator locator = new WsWorkunitsLocator();
 		try {
-			WsWorkunitsServiceSoap service = locator.getWsWorkunitsServiceSoap(getURL("WsWorkunits"));
-			initStub((org.apache.axis.client.Stub)service);
-			return service;
+			WsWorkunitsStub stub = new WsWorkunitsStub(getURL("WsWorkunits").toString());
+			initStub(stub);
+			return stub;
 		} catch (MalformedURLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		} catch (ServiceException e) {
+		} catch (AxisFault e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return null;	
 	}
 
-	public WsDfuServiceSoap getWsDfuService() {
+	public WsDfuStub getWsDfuService() {
 		latencyTest();
-		WsDfuLocator locator = new WsDfuLocator();
 		try {
-			WsDfuServiceSoap service = locator.getWsDfuServiceSoap(getURL("WsDfu"));
-			initStub((org.apache.axis.client.Stub)service);
-			return service;
+			WsDfuStub stub = new WsDfuStub(getURL("WsDfu").toString());
+			initStub(stub);
+			return stub;
 		} catch (MalformedURLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		} catch (ServiceException e) {
+		} catch (AxisFault e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return null;	
 	}
 
-	public FileSprayServiceSoap getFileSprayService() {
+	public FileSprayStub getFileSprayService() {
 		latencyTest();
-		FileSprayLocator locator = new FileSprayLocator();
 		try {
-			FileSprayServiceSoap service = locator.getFileSprayServiceSoap(getURL("FileSpray"));
-			initStub((org.apache.axis.client.Stub)service);
-			return service;
+			FileSprayStub stub = new FileSprayStub(getURL("FileSpray").toString());
+			initStub(stub);
+			return stub;
 		} catch (MalformedURLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		} catch (ServiceException e) {
+		} catch (AxisFault e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return null;	
 	}
 
-	public WsTopologyServiceSoap getWsTopologyService() {
+	public WsTopologyStub getWsTopologyService() {
 		latencyTest();
-		WsTopologyLocator locator = new WsTopologyLocator();
 		try {
-			WsTopologyServiceSoap service = locator.getWsTopologyServiceSoap(getURL("WsTopology"));
-			initStub((org.apache.axis.client.Stub)service);
+			String dummy = getURL("WsTopology").toString();
+			WsTopologyStub service = new WsTopologyStub(getURL("WsTopology").toString());
+			initStub(service);
 			return service;
 		} catch (MalformedURLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		} catch (ServiceException e) {
+		} catch (AxisFault e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}

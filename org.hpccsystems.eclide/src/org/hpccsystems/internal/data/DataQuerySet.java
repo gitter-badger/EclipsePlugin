@@ -13,7 +13,7 @@ package org.hpccsystems.internal.data;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.hpccsystems.ws.wsworkunits.QuerySet;
+import org.hpccsystems.ws.wsworkunits.WsWorkunitsStub.QuerySet;
 
 public class DataQuerySet extends DataSingleton {
 	private static Map<Integer, DataQuerySet> QuerySets = new HashMap<Integer, DataQuerySet>();

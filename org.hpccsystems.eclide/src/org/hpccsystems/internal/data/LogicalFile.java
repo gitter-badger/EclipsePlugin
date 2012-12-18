@@ -14,14 +14,14 @@ import java.rmi.RemoteException;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.hpccsystems.ws.filespray.PhysicalFileStruct;
-import org.hpccsystems.ws.wsdfu.DFUFileDetail;
-import org.hpccsystems.ws.wsdfu.DFUInfoRequest;
-import org.hpccsystems.ws.wsdfu.DFUInfoResponse;
-import org.hpccsystems.ws.wsdfu.DFULogicalFile;
-import org.hpccsystems.ws.wsdfu.WsDfuServiceSoap;
-import org.hpccsystems.ws.wsworkunits.ArrayOfEspException;
-import org.hpccsystems.ws.wsworkunits.ECLSourceFile;
+import org.hpccsystems.ws.filespray.FileSprayStub.PhysicalFileStruct;
+import org.hpccsystems.ws.wsdfu.EspSoapFault;
+import org.hpccsystems.ws.wsdfu.WsDfuStub;
+import org.hpccsystems.ws.wsdfu.WsDfuStub.DFUFileDetail;
+import org.hpccsystems.ws.wsdfu.WsDfuStub.DFUInfoRequest;
+import org.hpccsystems.ws.wsdfu.WsDfuStub.DFUInfoResponse;
+import org.hpccsystems.ws.wsdfu.WsDfuStub.DFULogicalFile;
+import org.hpccsystems.ws.wsworkunits.WsWorkunitsStub.ECLSourceFile;
 
 public class LogicalFile extends DataSingleton {
 	private static Map<Integer, LogicalFile> LogicalFiles = new HashMap<Integer, LogicalFile>();
@@ -100,17 +100,17 @@ public class LogicalFile extends DataSingleton {
 
 	@Override
 	void fullRefresh() {
-		WsDfuServiceSoap service = platform.getWsDfuService();
-		if (service != null) {
+		WsDfuStub stub = platform.getWsDfuService();
+		if (stub != null) {
 			DFUInfoRequest request = new DFUInfoRequest();
 			request.setName(info.getName());
 			try {
-				DFUInfoResponse respsone = service.DFUInfo(request);
+				DFUInfoResponse respsone = stub.dFUInfo(request);
 				Update(respsone.getFileDetail());		
-			} catch (ArrayOfEspException e) {
+			} catch (RemoteException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
-			} catch (RemoteException e) {
+			} catch (EspSoapFault e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}

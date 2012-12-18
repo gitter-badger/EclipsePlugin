@@ -18,23 +18,28 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.hpccsystems.eclide.Activator;
-import org.hpccsystems.ws.wsworkunits.ApplicationValue;
-import org.hpccsystems.ws.wsworkunits.ArrayOfEspException;
-import org.hpccsystems.ws.wsworkunits.ECLGraph;
-import org.hpccsystems.ws.wsworkunits.ECLQuery;
-import org.hpccsystems.ws.wsworkunits.ECLResult;
-import org.hpccsystems.ws.wsworkunits.ECLSourceFile;
-import org.hpccsystems.ws.wsworkunits.ECLWorkunit;
-import org.hpccsystems.ws.wsworkunits.EspException;
-import org.hpccsystems.ws.wsworkunits.WUAbort;
-import org.hpccsystems.ws.wsworkunits.WUDelete;
-import org.hpccsystems.ws.wsworkunits.WUInfo;
-import org.hpccsystems.ws.wsworkunits.WUInfoResponse;
-import org.hpccsystems.ws.wsworkunits.WUPublishWorkunit;
-import org.hpccsystems.ws.wsworkunits.WUQuery;
-import org.hpccsystems.ws.wsworkunits.WUQueryResponse;
-import org.hpccsystems.ws.wsworkunits.WUResubmit;
-import org.hpccsystems.ws.wsworkunits.WsWorkunitsServiceSoap;
+import org.hpccsystems.ws.wsworkunits.EspSoapFault;
+import org.hpccsystems.ws.wsworkunits.WsWorkunitsStub;
+import org.hpccsystems.ws.wsworkunits.WsWorkunitsStub.ApplicationValue;
+import org.hpccsystems.ws.wsworkunits.WsWorkunitsStub.ArrayOfApplicationValue;
+import org.hpccsystems.ws.wsworkunits.WsWorkunitsStub.ArrayOfECLGraph;
+import org.hpccsystems.ws.wsworkunits.WsWorkunitsStub.ArrayOfECLResult;
+import org.hpccsystems.ws.wsworkunits.WsWorkunitsStub.ArrayOfECLSourceFile;
+import org.hpccsystems.ws.wsworkunits.WsWorkunitsStub.ECLGraph;
+import org.hpccsystems.ws.wsworkunits.WsWorkunitsStub.ECLQuery;
+import org.hpccsystems.ws.wsworkunits.WsWorkunitsStub.ECLResult;
+import org.hpccsystems.ws.wsworkunits.WsWorkunitsStub.ECLSourceFile;
+import org.hpccsystems.ws.wsworkunits.WsWorkunitsStub.ECLWorkunit;
+import org.hpccsystems.ws.wsworkunits.WsWorkunitsStub.EspException;
+import org.hpccsystems.ws.wsworkunits.WsWorkunitsStub.EspStringArray;
+import org.hpccsystems.ws.wsworkunits.WsWorkunitsStub.WUAbort;
+import org.hpccsystems.ws.wsworkunits.WsWorkunitsStub.WUDelete;
+import org.hpccsystems.ws.wsworkunits.WsWorkunitsStub.WUInfo;
+import org.hpccsystems.ws.wsworkunits.WsWorkunitsStub.WUInfoResponse;
+import org.hpccsystems.ws.wsworkunits.WsWorkunitsStub.WUPublishWorkunit;
+import org.hpccsystems.ws.wsworkunits.WsWorkunitsStub.WUQuery;
+import org.hpccsystems.ws.wsworkunits.WsWorkunitsStub.WUQueryResponse;
+import org.hpccsystems.ws.wsworkunits.WsWorkunitsStub.WUResubmit;
 
 public class Workunit extends DataSingleton {
 	public static DataSingletonCollection All = new DataSingletonCollection();	
@@ -126,25 +131,39 @@ public class Workunit extends DataSingleton {
 	 */
 
 	public State getStateID() {
-		if (info.getStateID() != null) {
-			switch (info.getStateID()){
-			case 1:		return State.COMPILED;
-			case 2:		return State.RUNNING;
-			case 3:		return State.COMPLETED;
-			case 4:		return State.FAILED;
-			case 5:		return State.ARCHIVED;
-			case 6:		return State.ABORTING;
-			case 7:		return State.ABORTED;
-			case 8:		return State.BLOCKED;
-			case 9:		return State.SUBMITTED;
-			case 10:	return State.SCHEDULED;
-			case 11:	return State.COMPILING;
-			case 12:	return State.WAIT;
-			case 13:	return State.WAIT;
-			case 14:	return State.WAIT;
-			case 15:	return State.RUNNING;
-			case 999:	return State.UNKNOWN_ONSERVER;
-			}
+		switch (info.getStateID()) {
+		case 1:
+			return State.COMPILED;
+		case 2:
+			return State.RUNNING;
+		case 3:
+			return State.COMPLETED;
+		case 4:
+			return State.FAILED;
+		case 5:
+			return State.ARCHIVED;
+		case 6:
+			return State.ABORTING;
+		case 7:
+			return State.ABORTED;
+		case 8:
+			return State.BLOCKED;
+		case 9:
+			return State.SUBMITTED;
+		case 10:
+			return State.SCHEDULED;
+		case 11:
+			return State.COMPILING;
+		case 12:
+			return State.WAIT;
+		case 13:
+			return State.WAIT;
+		case 14:
+			return State.WAIT;
+		case 15:
+			return State.RUNNING;
+		case 999:
+			return State.UNKNOWN_ONSERVER;
 		}
 		return State.UNKNOWN;
 	}
@@ -245,38 +264,38 @@ public class Workunit extends DataSingleton {
 	}
 	//  Actions  ---
 	public void abort() {
-		WsWorkunitsServiceSoap service = platform.getWsWorkunitsService();
-		if (service != null) {
+		WsWorkunitsStub stub = platform.getWsWorkunitsService();
+		if (stub != null) {
 			WUAbort request = new WUAbort();
-			String[] wuids = new String[1];
-			wuids[0] = info.getWuid();
+			EspStringArray wuids = new EspStringArray();
+			wuids.addItem(info.getWuid());
 			request.setWuids(wuids);
 			try {
-				service.WUAbort(request);
+				stub.wUAbort(request);
 				refreshState();
-			} catch (ArrayOfEspException e) {
-				assert false;
-				e.printStackTrace();
 			} catch (RemoteException e) {
+				e.printStackTrace();
+			} catch (EspSoapFault e) {
+				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
 	}
 
 	public void delete() {
-		WsWorkunitsServiceSoap service = platform.getWsWorkunitsService();
-		if (service != null) {
+		WsWorkunitsStub stub = platform.getWsWorkunitsService();
+		if (stub != null) {
 			WUDelete request = new WUDelete();
-			String[] wuids = new String[1];
-			wuids[0] = info.getWuid();
+			EspStringArray wuids = new EspStringArray();
+			wuids.addItem(info.getWuid());
 			request.setWuids(wuids);
 			try {
-				service.WUDelete(request);
+				stub.wUDelete(request);
 				refreshState();
-			} catch (ArrayOfEspException e) {
-				assert false;
-				e.printStackTrace();
 			} catch (RemoteException e) {
+				e.printStackTrace();
+			} catch (EspSoapFault e) {
+				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
@@ -284,21 +303,21 @@ public class Workunit extends DataSingleton {
 
 
 	public void resubmit(boolean restart, boolean clone) {
-		WsWorkunitsServiceSoap service = platform.getWsWorkunitsService();
-		if (service != null) {
+		WsWorkunitsStub stub = platform.getWsWorkunitsService();
+		if (stub != null) {
 			WUResubmit request = new WUResubmit();
 			request.setResetWorkflow(restart);
 			request.setCloneWorkunit(clone);
-			String[] wuids = new String[1];
-			wuids[0] = info.getWuid();
+			EspStringArray wuids = new EspStringArray();
+			wuids.addItem(info.getWuid());
 			request.setWuids(wuids);
 			try {
-				service.WUResubmit(request);
+				stub.wUResubmit(request);
 				refreshState();
-			} catch (ArrayOfEspException e) {
-				assert false;
-				e.printStackTrace();
 			} catch (RemoteException e) {
+				e.printStackTrace();
+			} catch (EspSoapFault e) {
+				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
@@ -317,17 +336,17 @@ public class Workunit extends DataSingleton {
 	}
 
 	public void publish() {
-		WsWorkunitsServiceSoap service = platform.getWsWorkunitsService();
-		if (service != null) {
+		WsWorkunitsStub stub = platform.getWsWorkunitsService();
+		if (stub != null) {
 			WUPublishWorkunit request = new WUPublishWorkunit();
 			request.setWuid(info.getWuid());
 			try {
-				service.WUPublishWorkunit(request);
+				stub.wUPublishWorkunit(request);
 				refreshState();
-			} catch (ArrayOfEspException e) {
-				assert false;
-				e.printStackTrace();
 			} catch (RemoteException e) {
+				e.printStackTrace();
+			} catch (EspSoapFault e) {
+				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
@@ -340,20 +359,20 @@ public class Workunit extends DataSingleton {
 	@Override
 	void fastRefresh() {
 		State previousState = getStateID();
-		WsWorkunitsServiceSoap service = platform.getWsWorkunitsService();
-		if (service != null) {
+		WsWorkunitsStub stub = platform.getWsWorkunitsService();
+		if (stub != null) {
 			WUQuery request = new WUQuery();
 			request.setWuid(info.getWuid());
 			request.setCount(1);
 			try {
-				WUQueryResponse response = service.WUQuery(request);
-				if (response.getWorkunits() != null && response.getWorkunits().length == 1) {
-					update(response.getWorkunits()[0]);
+				WUQueryResponse response = stub.wUQuery(request);
+				if (response.getWorkunits() != null && response.getWorkunits().getECLWorkunit().length == 1) {
+					update(response.getWorkunits().getECLWorkunit()[0]);
 				}		
-			} catch (ArrayOfEspException e) {
+			} catch (RemoteException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
-			} catch (RemoteException e) {
+			} catch (EspSoapFault e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
@@ -369,8 +388,8 @@ public class Workunit extends DataSingleton {
 	}
 
 	void fullRefresh(boolean includeGraphs, boolean includeResults, boolean includeSourceFiles, boolean includeApplicationValues) {
-		WsWorkunitsServiceSoap service = platform.getWsWorkunitsService();
-		if (service != null) {
+		WsWorkunitsStub stub = platform.getWsWorkunitsService();
+		if (stub != null) {
 			WUInfo request = new WUInfo();
 			request.setWuid(info.getWuid());
 			request.setIncludeGraphs(includeGraphs);
@@ -380,7 +399,7 @@ public class Workunit extends DataSingleton {
 			request.setIncludeSourceFiles(includeSourceFiles);
 			request.setIncludeApplicationValues(includeApplicationValues);
 			try {
-				WUInfoResponse response = service.WUInfo(request);
+				WUInfoResponse response = stub.wUInfo(request);
 				if (response.getWorkunit() == null) {	//  Call succeeded, but no response...
 					for (EspException e : response.getExceptions().getException()) {
 						if (e.getCode().equals("20082")) {	//  No longer exists...
@@ -394,13 +413,13 @@ public class Workunit extends DataSingleton {
 				} else {
 					update(response.getWorkunit());
 				}
-				if (response.getResultViews() != null) {
-					resultViews = Arrays.asList(response.getResultViews());
+				if (response.getResultViews() != null && response.getResultViews().getView() != null) {
+					resultViews = Arrays.asList(response.getResultViews().getView());
 				} 
-			} catch (ArrayOfEspException e) {
-				assert false;
-				e.printStackTrace();
 			} catch (RemoteException e) {
+				e.printStackTrace();
+			} catch (EspSoapFault e) {
+				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
@@ -487,12 +506,12 @@ public class Workunit extends DataSingleton {
 		return false;
 	}
 
-	synchronized boolean updateApplicationValues(ApplicationValue[] rawAppVals) {
+	synchronized boolean updateApplicationValues(ArrayOfApplicationValue rawAppVals) {
 		if (rawAppVals != null) {
 			int applicationValuesCount = applicationValues.size();
 			//  Prime results;
 			applicationValues.clear();
-			for(ApplicationValue av : rawAppVals) {
+			for(ApplicationValue av : rawAppVals.getApplicationValue()) {
 				if (av.getApplication().compareTo(Activator.PLUGIN_ID) == 0) {
 					applicationValues.put(av.getName(), av.getValue());
 				}
@@ -505,12 +524,12 @@ public class Workunit extends DataSingleton {
 		return false;
 	}
 
-	synchronized boolean updateResults(ECLResult[] rawResults) {
+	synchronized boolean updateResults(ArrayOfECLResult rawResults) {
 		if (rawResults != null) {
 			int resultCount = results.size();
 			//  Prime results;
 			results.clear();
-			for(ECLResult r : rawResults) {
+			for(ECLResult r : rawResults.getECLResult()) {
 				results.add(getResult(r)); 	//  Will mark changed if needed  ---
 			}
 			if (resultCount != results.size()) {
@@ -521,12 +540,12 @@ public class Workunit extends DataSingleton {
 		return false;
 	}
 
-	synchronized boolean updateGraphs(ECLGraph[] rawGraphs) {
+	synchronized boolean updateGraphs(ArrayOfECLGraph rawGraphs) {
 		if (rawGraphs != null) {
 			int graphCount = graphs.size();
 			//  Prime graphs;
 			graphs.clear();
-			for(ECLGraph g : rawGraphs) {
+			for(ECLGraph g : rawGraphs.getECLGraph()) {
 				graphs.add(getGraph(g));	//  Will mark changed if needed  ---
 			}
 			if (graphCount != graphs.size()) {
@@ -537,12 +556,12 @@ public class Workunit extends DataSingleton {
 		return false;
 	}
 
-	synchronized boolean updateSourceFiles(ECLSourceFile[] rawSourceFiles) {
+	synchronized boolean updateSourceFiles(ArrayOfECLSourceFile rawSourceFiles) {
 		if (rawSourceFiles != null) {
 			int sourceFileCount = sourceFiles.size();
 			//  Prime graphs;
 			sourceFiles.clear();
-			for(ECLSourceFile g : rawSourceFiles) {
+			for(ECLSourceFile g : rawSourceFiles.getECLSourceFile()) {
 				sourceFiles.add(getSourceFile(g));	//  Will mark changed if needed  ---
 			}
 			if (sourceFileCount != sourceFiles.size()) {

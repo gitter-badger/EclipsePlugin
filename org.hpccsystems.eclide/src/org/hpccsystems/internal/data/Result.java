@@ -16,11 +16,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.hpccsystems.internal.DatasetParser;
-import org.hpccsystems.ws.wsworkunits.ArrayOfEspException;
-import org.hpccsystems.ws.wsworkunits.ECLResult;
-import org.hpccsystems.ws.wsworkunits.WUResult;
-import org.hpccsystems.ws.wsworkunits.WUResultResponse;
-import org.hpccsystems.ws.wsworkunits.WsWorkunitsServiceSoap;
+import org.hpccsystems.ws.wsworkunits.EspSoapFault;
+import org.hpccsystems.ws.wsworkunits.WsWorkunitsStub;
+import org.hpccsystems.ws.wsworkunits.WsWorkunitsStub.ECLResult;
+import org.hpccsystems.ws.wsworkunits.WsWorkunitsStub.WUResult;
+import org.hpccsystems.ws.wsworkunits.WsWorkunitsStub.WUResultResponse;
 import org.xml.sax.InputSource;
 
 public class Result extends DataSingleton {
@@ -77,15 +77,15 @@ public class Result extends DataSingleton {
 				++count;
 			}
 
-			WsWorkunitsServiceSoap service = workunit.getPlatform().getWsWorkunitsService();
-			if (service != null) {
+			WsWorkunitsStub stub = workunit.getPlatform().getWsWorkunitsService();
+			if (stub != null) {
 				WUResult request = new WUResult();
 				request.setWuid(workunit.getWuid());
 				request.setSequence(info.getSequence());
 				request.setStart(start);
 				request.setCount(count);
 				try {
-					WUResultResponse response = service.WUResult(request);
+					WUResultResponse response = stub.wUResult(request);
 					String resultString = response.getResult();
 					if (resultString != null) {
 						int offset = resultString.indexOf("<Dataset");
@@ -93,10 +93,10 @@ public class Result extends DataSingleton {
 						new DatasetParser(response.getStart(), new InputSource(new StringReader(resultString)), data);
 						return data.get(row).get(col);
 					}
-				} catch (ArrayOfEspException e) {
+				} catch (RemoteException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
-				} catch (RemoteException e) {
+				} catch (EspSoapFault e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
@@ -141,7 +141,7 @@ public class Result extends DataSingleton {
 	}
 
 	public State getStateID() {
-		if (info.getTotal() != null && info.getTotal() != -1) {
+		if (info.getTotal() != -1) {
 			return State.COMPLETED;
 		}
 		return State.UNKNOWN;
@@ -164,14 +164,14 @@ public class Result extends DataSingleton {
 		if (info.getECLSchemas() == null) {
 			return 0;
 		}
-		return info.getECLSchemas().length;
+		return info.getECLSchemas().getECLSchemaItem().length;
 	}
 
 	public String getColumnName(int i) {
 		if (info.getECLSchemas() == null) {
 			return "";
 		}
-		return info.getECLSchemas()[i].getColumnName();
+		return info.getECLSchemas().getECLSchemaItem()[i].getColumnName();
 	}
 
 	public String getCell(int row, int col) {
@@ -192,7 +192,7 @@ public class Result extends DataSingleton {
 	//  Updates  ---
 	boolean Update(ECLResult result) {		
 		boolean retVal = false;
-		if (result != null && info.getSequence().equals(result.getSequence()) && !info.equals(result)) {
+		if (result != null && info.getSequence() == result.getSequence() && !info.equals(result)) {
 			if (UpdateState(result)) {
 				retVal = true;
 				notifyObservers(Notification.RESULT);
@@ -203,7 +203,7 @@ public class Result extends DataSingleton {
 	}
 
 	synchronized boolean UpdateState(ECLResult result) {
-		if (result != null && info.getSequence().equals(result.getSequence()) &&
+		if (result != null && info.getSequence() == result.getSequence() &&
 				EqualsUtil.hasChanged(info, result)) {
 
 			assert(result.getECLSchemas() != null);

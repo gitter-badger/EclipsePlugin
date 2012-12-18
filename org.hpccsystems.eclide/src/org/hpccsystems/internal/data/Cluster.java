@@ -14,11 +14,11 @@ import java.rmi.RemoteException;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.hpccsystems.ws.wstopology.TpClusterInfoRequest;
-import org.hpccsystems.ws.wstopology.TpClusterInfoResponse;
-import org.hpccsystems.ws.wstopology.TpTargetCluster;
-import org.hpccsystems.ws.wstopology.WsTopologyServiceSoap;
-import org.hpccsystems.ws.wsworkunits.ArrayOfEspException;
+import org.hpccsystems.ws.wstopology.EspSoapFault;
+import org.hpccsystems.ws.wstopology.WsTopologyStub;
+import org.hpccsystems.ws.wstopology.WsTopologyStub.TpClusterInfoRequest;
+import org.hpccsystems.ws.wstopology.WsTopologyStub.TpClusterInfoResponse;
+import org.hpccsystems.ws.wstopology.WsTopologyStub.TpTargetCluster;
 
 public class Cluster extends DataSingleton  {
 	private static Map<Integer, Cluster> Clusters = new HashMap<Integer, Cluster>();
@@ -62,17 +62,17 @@ public class Cluster extends DataSingleton  {
 	@Override
 	void fullRefresh() {
 		//  Probably not needed...
-		WsTopologyServiceSoap service = platform.getWsTopologyService();
-		if (service != null) {
+		WsTopologyStub stub = platform.getWsTopologyService();
+		if (stub != null) {
 			TpClusterInfoRequest request = new TpClusterInfoRequest();
 			request.setName(info.getName());
 			try {
-				TpClusterInfoResponse respsone = service.tpClusterInfo(request);
+				TpClusterInfoResponse respsone = stub.tpClusterInfo(request);
 				Update(respsone);		
-			} catch (ArrayOfEspException e) {
+			} catch (RemoteException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
-			} catch (RemoteException e) {
+			} catch (EspSoapFault e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}

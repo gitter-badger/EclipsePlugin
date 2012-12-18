@@ -13,7 +13,7 @@ package org.hpccsystems.internal.data;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.hpccsystems.ws.wsworkunits.ECLGraph;
+import org.hpccsystems.ws.wsworkunits.WsWorkunitsStub.ECLGraph;
 
 public class Graph extends DataSingleton {
 	private static Map<Integer, Graph> Graphs = new HashMap<Integer, Graph>();
@@ -53,11 +53,11 @@ public class Graph extends DataSingleton {
 	}
 
 	public State getStateID() {
-		if (info.getRunning() != null && info.getRunning()) {
+		if (info.getRunning()) {
 			return State.RUNNING;
-		} else if (info.getComplete() != null && info.getComplete()) {
+		} else if (info.getComplete()) {
 			return State.COMPLETED;
-		} else if (info.getFailed() != null && info.getFailed()) {
+		} else if (info.getFailed()) {
 			return State.FAILED;
 		}
 		return State.UNKNOWN;

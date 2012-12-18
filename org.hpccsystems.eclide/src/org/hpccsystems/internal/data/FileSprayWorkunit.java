@@ -12,12 +12,12 @@ package org.hpccsystems.internal.data;
 
 import java.rmi.RemoteException;
 
-import org.hpccsystems.ws.filespray.DFUWorkunit;
-import org.hpccsystems.ws.filespray.EspException;
-import org.hpccsystems.ws.filespray.FileSprayServiceSoap;
-import org.hpccsystems.ws.filespray.GetDFUWorkunit;
-import org.hpccsystems.ws.filespray.GetDFUWorkunitResponse;
-import org.hpccsystems.ws.wsworkunits.ArrayOfEspException;
+import org.hpccsystems.ws.filespray.EspSoapFault;
+import org.hpccsystems.ws.filespray.FileSprayStub;
+import org.hpccsystems.ws.filespray.FileSprayStub.DFUWorkunit;
+import org.hpccsystems.ws.filespray.FileSprayStub.GetDFUWorkunit;
+import org.hpccsystems.ws.filespray.FileSprayStub.GetDFUWorkunitResponse;
+import org.hpccsystems.ws.filespray.FileSprayStub.EspException;
 
 public class FileSprayWorkunit extends DataSingleton {
 	public static DataSingletonCollection All = new DataSingletonCollection();	
@@ -65,18 +65,25 @@ public class FileSprayWorkunit extends DataSingleton {
 	WUStateNoLongerOnServer 999
 	 */	
 	public State getStateID() {
-		if (info.getState() != null) {
-			switch (info.getState()){
-			case 1:		return State.SCHEDULED;
-			case 2:		return State.WAIT;
-			case 3:		return State.RUNNING;
-			case 4:		return State.ABORTED;
-			case 5:		return State.FAILED;
-			case 6:		return State.COMPLETED;
-			case 7:		return State.COMPLETED;
-			case 8:		return State.ABORTING;
-			case 999:	return State.UNKNOWN_ONSERVER;
-			}
+		switch (info.getState()) {
+		case 1:
+			return State.SCHEDULED;
+		case 2:
+			return State.WAIT;
+		case 3:
+			return State.RUNNING;
+		case 4:
+			return State.ABORTED;
+		case 5:
+			return State.FAILED;
+		case 6:
+			return State.COMPLETED;
+		case 7:
+			return State.COMPLETED;
+		case 8:
+			return State.ABORTING;
+		case 999:
+			return State.UNKNOWN_ONSERVER;
 		}
 		return State.UNKNOWN;
 	}
@@ -146,12 +153,12 @@ public class FileSprayWorkunit extends DataSingleton {
 
 	@Override
 	void fullRefresh() {
-		FileSprayServiceSoap service = platform.getFileSprayService();
-		if (service != null) {
+		FileSprayStub stub = platform.getFileSprayService();
+		if (stub != null) {
 			GetDFUWorkunit request = new GetDFUWorkunit();
 			request.setWuid(info.getID());
 			try {
-				GetDFUWorkunitResponse response = service.getDFUWorkunit(request);
+				GetDFUWorkunitResponse response = stub.getDFUWorkunit(request);
 				if (response.getResult() == null) {	//  Call succeeded, but no response...
 					for (EspException e : response.getExceptions().getException()) {
 						if (e.getCode().equals("20082")) {	//  No longer exists...
@@ -164,10 +171,10 @@ public class FileSprayWorkunit extends DataSingleton {
 				} else {
 					update(response.getResult());		
 				}
-			} catch (ArrayOfEspException e) {
+			} catch (RemoteException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
-			} catch (RemoteException e) {
+			} catch (EspSoapFault e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}

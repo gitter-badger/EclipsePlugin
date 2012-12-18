@@ -14,12 +14,13 @@ import java.rmi.RemoteException;
 import java.util.Collection;
 import java.util.HashSet;
 
-import org.hpccsystems.ws.filespray.FileListRequest;
-import org.hpccsystems.ws.filespray.FileListResponse;
-import org.hpccsystems.ws.filespray.FileSprayServiceSoap;
-import org.hpccsystems.ws.filespray.PhysicalFileStruct;
-import org.hpccsystems.ws.wstopology.TpDropZone;
-import org.hpccsystems.ws.wsworkunits.ArrayOfEspException;
+import org.hpccsystems.ws.wstopology.WsTopologyStub.TpDropZone;
+import org.hpccsystems.ws.filespray.EspSoapFault;
+import org.hpccsystems.ws.filespray.FileSprayStub;
+import org.hpccsystems.ws.filespray.FileSprayStub.ArrayOfPhysicalFileStruct;
+import org.hpccsystems.ws.filespray.FileSprayStub.FileListRequest;
+import org.hpccsystems.ws.filespray.FileSprayStub.FileListResponse;
+import org.hpccsystems.ws.filespray.FileSprayStub.PhysicalFileStruct;
 
 public class DropZone extends DataSingleton  {
 	public static DataSingletonCollection All = new DataSingletonCollection();	
@@ -48,24 +49,24 @@ public class DropZone extends DataSingleton  {
 
 	public String getIP() {
 		//  TODO - Check if more than one folder per drop zone  ---
-		if (info.getTpMachines() != null && info.getTpMachines().length > 0) {
-			return info.getTpMachines()[0].getNetaddress();
+		if (info.getTpMachines().isTpMachineSpecified() && info.getTpMachines().getTpMachine().length > 0) {
+			return info.getTpMachines().getTpMachine()[0].getNetaddress();
 		}
 		return "";
 	}
 
 	public String getOS() {
 		//  TODO - Check if more than one folder per drop zone  ---
-		if (info.getTpMachines() != null && info.getTpMachines().length > 0) {
-			return info.getTpMachines()[0].getOS().toString();
+		if (info.getTpMachines().isTpMachineSpecified() && info.getTpMachines().getTpMachine().length > 0) {
+			return Integer.toString(info.getTpMachines().getTpMachine()[0].getOS());
 		}
 		return "";
 	}
 
 	public String getDirectory() {
 		//  TODO - Check if more than one folder per drop zone  ---
-		if (info.getTpMachines() != null && info.getTpMachines().length > 0) {
-			return info.getTpMachines()[0].getDirectory();
+		if (info.getTpMachines().isTpMachineSpecified() && info.getTpMachines().getTpMachine().length > 0) {
+			return info.getTpMachines().getTpMachine()[0].getDirectory();
 		}
 		return null;
 	}
@@ -98,19 +99,19 @@ public class DropZone extends DataSingleton  {
 
 	@Override
 	void fullRefresh() {
-		FileSprayServiceSoap service = platform.getFileSprayService();
-		if (service != null) {
+		FileSprayStub stub = platform.getFileSprayService();
+		if (stub != null) {
 			FileListRequest request = new FileListRequest();
 			request.setNetaddr(getIP());
 			request.setOS(getOS());
 			request.setPath(getDirectory());
 			try {
-				FileListResponse response = service.fileList(request);
+				FileListResponse response = stub.fileList(request);
 				update(response.getFiles());
-			} catch (ArrayOfEspException e) {
+			} catch (RemoteException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
-			} catch (RemoteException e) {
+			} catch (EspSoapFault e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
@@ -124,10 +125,10 @@ public class DropZone extends DataSingleton  {
 		}
 	}
 
-	synchronized boolean update(PhysicalFileStruct[] rawFileStructs) {
+	synchronized boolean update(ArrayOfPhysicalFileStruct rawFileStructs) {
 		if (rawFileStructs != null) {
 			files.clear();
-			for(PhysicalFileStruct file : rawFileStructs) {
+			for(PhysicalFileStruct file : rawFileStructs.getPhysicalFileStruct()) {
 				files.add(getFile(file));	//  Will mark changed if needed  ---
 			}
 		}

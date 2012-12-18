@@ -21,8 +21,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import javax.xml.rpc.ServiceException;
-
+import org.apache.axis2.client.Options;
+import org.apache.axis2.client.ServiceClient;
 import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -38,17 +38,16 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.dialogs.WizardResourceImportPage;
 import org.hpccsystems.internal.Eclipse;
-import org.hpccsystems.ws.WsAttributes.ArrayOfEspException;
-import org.hpccsystems.ws.WsAttributes.ECLAttribute;
-import org.hpccsystems.ws.WsAttributes.ECLModule;
-import org.hpccsystems.ws.WsAttributes.GetAttribute;
-import org.hpccsystems.ws.WsAttributes.GetAttributeResponse;
-import org.hpccsystems.ws.WsAttributes.GetAttributes;
-import org.hpccsystems.ws.WsAttributes.GetAttributesResponse;
-import org.hpccsystems.ws.WsAttributes.GetModules;
-import org.hpccsystems.ws.WsAttributes.GetModulesResponse;
-import org.hpccsystems.ws.WsAttributes.WsAttributesLocator;
-import org.hpccsystems.ws.WsAttributes.WsAttributesServiceSoap;
+import org.hpccsystems.ws.WsAttributes.EspSoapFault;
+import org.hpccsystems.ws.WsAttributes.WsAttributesStub;
+import org.hpccsystems.ws.WsAttributes.WsAttributesStub.ECLAttribute;
+import org.hpccsystems.ws.WsAttributes.WsAttributesStub.ECLModule;
+import org.hpccsystems.ws.WsAttributes.WsAttributesStub.GetAttribute;
+import org.hpccsystems.ws.WsAttributes.WsAttributesStub.GetAttributeResponse;
+import org.hpccsystems.ws.WsAttributes.WsAttributesStub.GetAttributes;
+import org.hpccsystems.ws.WsAttributes.WsAttributesStub.GetAttributesResponse;
+import org.hpccsystems.ws.WsAttributes.WsAttributesStub.GetModules;
+import org.hpccsystems.ws.WsAttributes.WsAttributesStub.GetModulesResponse;
 
 public class ImportWizardPage extends WizardResourceImportPage {
 
@@ -122,21 +121,26 @@ public class ImportWizardPage extends WizardResourceImportPage {
 	boolean doImport() {
 		final IFolder targetFolder = Eclipse.getWorkspaceRoot().getFolder(getContainerFullPath());
 
-		WsAttributesLocator locator = new WsAttributesLocator();
 		try {
-			final WsAttributesServiceSoap service = locator.getWsAttributesServiceSoap(new URL("http", fIPText.getStringValue(), 8145, "/WsAttributes"));
-			org.apache.axis.client.Stub stub = (org.apache.axis.client.Stub)service;
-			stub.setUsername(fUserText.getStringValue());
-			stub.setPassword(fPasswordText.getStringValue());
+			final WsAttributesStub stub = new WsAttributesStub(new URL("http", fIPText.getStringValue(), 8145, "/WsAttributes").toString());
+			
+			ServiceClient serviceClient = stub._getServiceClient();
+			Options options = serviceClient.getOptions();
+			options.setUserName(fUserText.getStringValue());
+			options.setPassword(fPasswordText.getStringValue());
+			options.setTimeOutInMilliSeconds(180 * 1000);
+//			stub.setMaintainSession(true);
+			serviceClient.setOptions(options);		
+			
 			GetModules request = new GetModules();
-			final GetModulesResponse response = service.getModules(request);
+			final GetModulesResponse response = stub.getModules(request);
 			if (response.getOutModules() != null) {
 
 				Job job = new Job("Importing Attributes") {
 					@Override
 					protected IStatus run(IProgressMonitor monitor) {
-						monitor.beginTask("Importing", response.getOutModules().length);
-						for (final ECLModule module : response.getOutModules()) {
+						monitor.beginTask("Importing", response.getOutModules().getECLModule().length);
+						for (final ECLModule module : response.getOutModules().getECLModule()) {
 							if (module.getName().equalsIgnoreCase("Trash")) {
 								continue;
 							}
@@ -145,11 +149,11 @@ public class ImportWizardPage extends WizardResourceImportPage {
 							GetAttributes request2 = new GetAttributes();
 							request2.setModuleName(module.getName());
 							try {
-								GetAttributesResponse response2 = service.getAttributes(request2);
+								GetAttributesResponse response2 = stub.getAttributes(request2);
 								if (response2.getOutAttributes() != null) {
 									int MAX_THREAD = 5;
 									ExecutorService threadPool = Executors.newFixedThreadPool(MAX_THREAD);
-									for (final ECLAttribute attribute : response2.getOutAttributes()) {
+									for (final ECLAttribute attribute : response2.getOutAttributes().getECLAttribute()) {
 										String modPath = attribute.getModuleName();
 										modPath.replaceAll(".", "/");
 										String attrPath = attribute.getName() + ".ecl";
@@ -168,7 +172,7 @@ public class ImportWizardPage extends WizardResourceImportPage {
 														request3.setAttributeName(attribute.getName());
 														request3.setGetText(true);
 														try {
-															GetAttributeResponse response3 = service.getAttribute(request3);
+															GetAttributeResponse response3 = stub.getAttribute(request3);
 															if (response3.getOutAttribute() != null) {
 																ECLAttribute attribute2 = response3.getOutAttribute();
 																try {
@@ -182,10 +186,10 @@ public class ImportWizardPage extends WizardResourceImportPage {
 																}
 																System.out.println(attribute2.getModuleName() + "." + attribute2.getName());
 															}
-														} catch (ArrayOfEspException e) {
+														} catch (RemoteException e) {
 															// TODO Auto-generated catch block
 															e.printStackTrace();
-														} catch (RemoteException e) {
+														} catch (EspSoapFault e) {
 															// TODO Auto-generated catch block
 															e.printStackTrace();
 														}
@@ -213,11 +217,10 @@ public class ImportWizardPage extends WizardResourceImportPage {
 										return Status.CANCEL_STATUS;
 									}
 								}
-							} catch (ArrayOfEspException e) {
+							} catch (RemoteException e) {
 								// TODO Auto-generated catch block
 								e.printStackTrace();
-								//return new Status();
-							} catch (RemoteException e) {
+							} catch (EspSoapFault e) {
 								// TODO Auto-generated catch block
 								e.printStackTrace();
 							}
@@ -232,13 +235,10 @@ public class ImportWizardPage extends WizardResourceImportPage {
 		} catch (MalformedURLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		} catch (ServiceException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (ArrayOfEspException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 		} catch (RemoteException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (EspSoapFault e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
