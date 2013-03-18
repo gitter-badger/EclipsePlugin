@@ -11,13 +11,13 @@
          point="org.eclipse.ui.perspectives">
       <perspective
             class="org.hpccsystems.eclide.perspectives.ECLPerspective"
-            icon="icons/releng_gears.gif"
+            icon="icons/releng_gears.png"
             id="org.hpccsystems.eclide.perspectives.ECLPerspective"
             name="%perspective.name.0">
       </perspective>
       <perspective
             class="org.hpccsystems.eclide.perspectives.ECLWatch"
-            icon="icons/releng_gears.gif"
+            icon="icons/releng_gears.png"
             id="org.hpccsystems.eclide.perspectives.ECLWatch"
             name="%perspective.name.1">
       </perspective>
@@ -73,7 +73,7 @@
       <view
             category="org.hpccsystems.eclide"
             class="org.hpccsystems.eclide.ui.navigator.ECLNavigator"
-            icon="icons/releng_gears.gif"
+            icon="icons/releng_gears.png"
             id="org.hpccsystems.eclide.navigator"
             name="%view.name.0">
       </view>
@@ -87,7 +87,7 @@
             allowMultiple="false"
             category="org.hpccsystems.eclide"
             class="org.hpccsystems.eclide.ui.viewer.platform.PlatformViewer"
-            icon="icons/releng_gears.gif"
+            icon="icons/releng_gears.png"
             id="org.hpccsystems.eclide.viewPlatforms"
             name="%view.name.3"
             restorable="true">
@@ -96,7 +96,7 @@
             allowMultiple="false"
             category="org.hpccsystems.eclide"
             class="org.hpccsystems.eclide.ui.viewer.platform.WorkunitsViewer"
-            icon="icons/releng_gears.gif"
+            icon="icons/releng_gears.png"
             id="org.hpccsystems.eclide.viewWorkunits"
             name="%view.name.4"
             restorable="true">
@@ -151,7 +151,7 @@
              category="org.hpccsystems.eclide"
              class="org.hpccsystems.eclide.wizards.ECLNewProjectWizard"
              finalPerspective="org.hpccsystems.eclide.perspectives.ECLPerspective"
-             icon="icons/releng_gears.gif"
+             icon="icons/releng_gears.png"
              id="org.hpccsystems.eclide.wizards.ECLNewProjectWizard"
              name="%wizard.name.1"
              preferredPerspectives="org.hpccsystems.eclide.perspectives.ECLPerspective"
@@ -189,7 +189,7 @@
       <wizard
             category="org.hpccsystems.eclide.importWizards.sampleCategory"
             class="org.hpccsystems.eclide.wizards.ImportWizard"
-            icon="icons/sample.gif"
+            icon="icons/sample.png"
             id="org.hpccsystems.eclide.importWizards.ImportWizard"
             name="%wizard.name.3">
          <description>
@@ -212,7 +212,7 @@
          point="org.eclipse.debug.ui.launchConfigurationTypeImages">
       <launchConfigurationTypeImage
             configTypeID="org.hpccsystems.eclide.launching.ECLConfigurationType"
-            icon="icons/releng_gears.gif"
+            icon="icons/releng_gears.png"
             id="org.hpccsystems.eclide.launchConfigurationTypeImage">
       </launchConfigurationTypeImage>
    </extension>

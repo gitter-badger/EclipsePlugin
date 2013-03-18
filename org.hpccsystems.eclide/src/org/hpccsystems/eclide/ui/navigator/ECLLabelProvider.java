@@ -28,7 +28,7 @@ public class ECLLabelProvider implements ILabelProvider {
 	@Override
 	public Image getImage(Object element) {
 		if (element instanceof ProjectClientToolsElement) {
-			return Activator.getImage("icons/package.gif"); 
+			return Activator.getImage("icons/package.png"); 
 		}
 		return null;
 	}

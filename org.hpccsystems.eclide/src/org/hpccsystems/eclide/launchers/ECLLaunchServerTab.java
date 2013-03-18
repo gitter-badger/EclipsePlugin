@@ -264,7 +264,7 @@ public class ECLLaunchServerTab extends ECLLaunchConfigurationTab {
 	@Override
 	public Image getImage() {
 		if (image == null) {
-			image = Activator.getImage("icons/releng_gears.gif"); //$NON-NLS-1$
+			image = Activator.getImage("icons/releng_gears.png"); //$NON-NLS-1$
 		}
 		return image;
 	}
